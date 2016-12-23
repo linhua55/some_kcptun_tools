@@ -1,5 +1,6 @@
-# some_kcptun_tools
-some kcptun relevant tools
+# UDP中继(kcptun)
+
+上行流量用一个UDP，下行流量用另一个UDP，为了缓解ISP封UDP断流问题
 
 需要修改两个py文件中的`端口号`和`服务器地址`
 
