@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf8 -*-
 from time import sleep
-import queue
+from collections import deque
 import socket
 import select
 
@@ -30,8 +30,8 @@ class UdpRelayServer:
         self.socketOut.bind(("", serverOutboundPort))
 
         message_queues = {}
-        message_queues[self.socketRelay] = queue.Queue()
-        message_queues[self.socketOut] = queue.Queue()
+        message_queues[self.socketRelay] = deque()
+        message_queues[self.socketOut] = deque()
 
         while True:
             sleep(0.001)
@@ -42,35 +42,35 @@ class UdpRelayServer:
                 elif sock.fileno() == self.socketIn.fileno():
                     try:
                         self.recvdata = sock.recv(buffer)
-                    except ConnectionError:  # handle the exception that the client close the connection(udp don't have)
-                        self.socketRelay = self.recreateSocket(self.socketRelay, message_queues)
+                    # except ConnectionError:  # handle the exception that the client close the connection(udp don't have)
+                    #     self.socketRelay = self.recreateSocket(self.socketRelay, message_queues)
                     except:
                         continue
                     else:
                         if self.recvdata:
                             # kcptun bind port kcptunBindPort
-                            message_queues[self.socketRelay].put(self.recvdata)
-                        else:
-                            # TODO
-                            # client hang up?
-                            self.socketRelay = self.recreateSocket(self.socketRelay, message_queues)
+                            message_queues[self.socketRelay].append(self.recvdata)
+                        # else:
+                        #     # TODO
+                        #     # client hang up?
+                        #     self.socketRelay = self.recreateSocket(self.socketRelay, message_queues)
 
                 elif sock.fileno() == self.socketRelay.fileno():
                     self.recvrelaydata, _ = sock.recvfrom(buffer)
                     if self.recvrelaydata:
-                        message_queues[self.socketOut].put(self.recvrelaydata)
+                        message_queues[self.socketOut].append(self.recvrelaydata)
 
             for sock in self.writable_socks:
                 if sock is self.socketRelay:
                     try:
-                        next_msg = message_queues[sock].get_nowait()
+                        next_msg = message_queues[sock].popleft()
                     except:
                         continue
                     else:
                         sock.sendto(next_msg, kcptunBind)
                 elif sock is self.socketOut:
                     try:
-                        next_msg = message_queues[sock].get_nowait()
+                        next_msg = message_queues[sock].popleft()
                     except:
                         continue
                     else:
@@ -82,7 +82,8 @@ class UdpRelayServer:
 
     def recreateSocket(self, socketName, message_queues):
         socketName1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        message_queues[socketName1] = message_queues[socketName]
+        # use deque, as queue.Queue can't be copy
+        message_queues[socketName1] = message_queues[socketName].copy()
         del message_queues[socketName]
         socketName.close()
         return socketName1
