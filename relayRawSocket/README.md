@@ -30,6 +30,7 @@ python3程序
   1. udpDstPort：kcptun服务端的UDP监听端口
   2. tcpDstPort: 本程序服务端的TCP监听端口(可任意，但两个文件中的需一致)，即上文中的<your_TCP_bind_port>
   3. serverIp: VPS服务器的IP地址，即上文中的<your_server_ip>
+  4. localIp: 本地网络的IP，一般是路由器分配给你的内网IP，如果在虚拟机中，则是 桥接网络 的IP
 
 ### relayRawSocketServer.py 中
 

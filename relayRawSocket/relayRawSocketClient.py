@@ -9,6 +9,7 @@ import random
 udpDstPort = 3389
 tcpDstPort = 441
 serverIp = 'xxx.xxx.xxx.xxx'
+localIp = '192.168.1.112'
 tcpDestAddr = (serverIp, tcpDstPort)
 udpDstAddr = ('127.0.0.1', udpDstPort)
 
@@ -206,7 +207,7 @@ while True:
 
             # pseudo header fields
             # [a for a in os.popen('route print').readlines() if ' 0.0.0.0 ' in a][0].split()[-2]
-            source_address = socket.inet_aton('192.168.1.112')
+            source_address = socket.inet_aton(localIp)
             dest_address = socket.inet_aton(serverIp)
             placeholder = 0
             protocol = socket.IPPROTO_TCP
