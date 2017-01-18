@@ -1,10 +1,8 @@
 # For Linux - Sniffs all incoming and outgoing packets :)
-import os
 import socket
 import sys
 from struct import *
 
-import random
 
 udpDstPort = 3389
 tcpDstPort = 441
@@ -45,8 +43,13 @@ def eth_addr(a):
 
 # create a AF_PACKET type raw socket (thats basically packet level)
 # define ETH_P_ALL    0x0003          /* Every packet (be careful!!!) */
+# 协议类型一共有四个
+# ETH_P_IP 0x800 只接收发往本机mac的ip类型的数据帧
+# ETH_P_ARP 0x806 只接受发往本机mac的arp类型的数据帧
+# ETH_P_RARP 0x8035 只接受发往本机mac的rarp类型的数据帧
+# ETH_P_ALL 0x3 接收发往本机mac的所有类型ip arp rarp的数据帧, 接收从本机发出的所有类型的数据帧.(混杂模式打开的情况下,会接收到非发往本地mac的数据帧)
 try:
-    s_recv = socket.socket(socket.AF_PACKET, socket.SOCK_DGRAM, socket.ntohs(0x0003)) # socket.SOCK_RAW
+    s_recv = socket.socket(socket.AF_PACKET, socket.SOCK_DGRAM, socket.ntohs(0x0800)) # socket.SOCK_RAW  0x0003
 except socket.error as msg:
     print('Socket could not be created. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
     sys.exit()
@@ -110,6 +113,7 @@ while True:
         tcp_header = packet[t:t + 20]
 
         if len(tcp_header) < 20:
+            print("packet: ", "".join("%02x" % b for b in packet))
             continue
 
         # now unpack them :)
@@ -126,6 +130,8 @@ while True:
         tcph_length = doff_reserved >> 4
 
         if source_port == tcpDstPort and s_addr == serverIp:
+            # if len(packet) < 150:
+            # print("packet: ", "".join("%02x" % b for b in packet))
             # print('Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(
             #     protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr))
             # print('Source Port : ' + str(source_port) + ' Dest Port : ' + str(dest_port) + ' Sequence Number : ' + str(
@@ -207,7 +213,7 @@ while True:
 
             # pseudo header fields
             # [a for a in os.popen('route print').readlines() if ' 0.0.0.0 ' in a][0].split()[-2]
-            source_address = socket.inet_aton(localIp)
+            source_address = socket.inet_aton(localIp)# '192.168.1.112'
             dest_address = socket.inet_aton(serverIp)
             placeholder = 0
             protocol = socket.IPPROTO_TCP

@@ -9,6 +9,7 @@ serverIP = 'xxx.xxx.xxx.xxx'
 udpDstAddr = ('127.0.0.1', udpDstPort)
 
 natDict = dict() # for NAT/NAPT function
+tcpSrcAddr = ('127.0.0.1', 441)
 
 # checksum functions needed for calculation checksum
 def checksum_m(msg):
@@ -41,7 +42,7 @@ def eth_addr(a):
 # create a AF_PACKET type raw socket (thats basically packet level)
 # define ETH_P_ALL    0x0003          /* Every packet (be careful!!!) */
 try:
-    s_recv = socket.socket(socket.AF_PACKET, socket.SOCK_DGRAM, socket.ntohs(0x0003)) # socket.SOCK_RAW
+    s_recv = socket.socket(socket.AF_PACKET, socket.SOCK_DGRAM, socket.ntohs(0x0800)) # socket.SOCK_RAW
 except socket.error as msg:
     print('Socket could not be created. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
     sys.exit()
@@ -132,7 +133,16 @@ while True:
 
             # print('Data : ' + str(data))
 
+            OldTcpSrcAddr = tcpSrcAddr
             tcpSrcAddr = (s_addr, source_port)
+
+            if OldTcpSrcAddr != tcpSrcAddr:
+                s_send_udp.close()
+                try:
+                    s_send_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                except socket.error as msg:
+                    print('Socket could not be created. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+                    sys.exit()
             s_send_udp.sendto(data, udpDstAddr)
 
             # need to implement NAT/NAPT function
